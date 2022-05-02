@@ -3,6 +3,16 @@ import { clientId, token, galifreyGuildID } from './config.json';
 import fs from 'fs'
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9'
+import { SlashCommandBuilder } from '@discordjs/builders';
+
+export interface ICommandInfo {
+    name: string,
+    execute: any,
+    usage: string,
+    data: SlashCommandBuilder
+}
+
+const commands: ICommandInfo[] = [];
 
 export const client: Client = new Client({
     intents:
@@ -17,21 +27,24 @@ export const client: Client = new Client({
 });
 
 async function deployCommands() {
-    const commands = [];
+
     const commandFiles = fs.readdirSync(__dirname + '/commands').filter(file => file.endsWith('.js'));
 
     for (const file of commandFiles) {
         const command = require(__dirname + `/commands/${file}`);
-        commands.push(command.data.toJSON());
+        commands.push(command);
     }
     const rest = new REST({ version: '9' }).setToken(token);
 
     (async () => {
         try {
-
+            const commandRegistration: any [] = [];
+            for(const c of commands){
+                commandRegistration.push(c.data.toJSON())
+            }
             const response = await rest.put(
                 Routes.applicationGuildCommands(clientId, galifreyGuildID),
-                { body: commands },
+                { body: commandRegistration },
             );
         }
         catch (error) {
@@ -41,12 +54,18 @@ async function deployCommands() {
 }
 
 client.login(token);
- client.once('ready', async () => {
+client.once('ready', async () => {
     await deployCommands();
- })
+})
+client.on('interactionCreate', async (interaction: Interaction) => {
+    if (!interaction.isCommand()) return;
 
- client.on('interactionCreate', async (interaction: Interaction) => {
-     
- })
+    const command: ICommandInfo | undefined = commands.find(x => x.name === interaction.commandName);
 
+    if (!command) return;
+    else {
+        const commandSuccess: Promise<boolean> = await command.execute(interaction);
+    }
+
+})
 
