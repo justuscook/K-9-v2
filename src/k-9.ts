@@ -1,15 +1,18 @@
-import { Client, Intents, Interaction } from 'discord.js';
+import { Client, Intents, Interaction, Message } from 'discord.js';
 import { clientId, token, galifreyGuildID } from './config.json';
 import fs from 'fs'
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9'
 import { SlashCommandBuilder } from '@discordjs/builders';
+import { connectToCollection, connectToDB, IClanQuestMessage } from './utils/database';
+import { Collection, MongoClient } from "mongodb";
+
 
 export interface ICommandInfo {
     name: string,
     execute: any,
     usage: string,
-    data: SlashCommandBuilder
+    data: any
 }
 
 const commands: ICommandInfo[] = [];
