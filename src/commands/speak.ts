@@ -1,8 +1,6 @@
 import { SlashCommandBuilder, SlashCommandChannelOption, SlashCommandStringOption } from '@discordjs/builders'
 import { ChannelType } from 'discord-api-types/v10';
 import { CommandInteraction, GuildChannel, GuildTextBasedChannel, Interaction } from 'discord.js'
-import { ICommandInfo } from '../k-9'
-
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('speak')
