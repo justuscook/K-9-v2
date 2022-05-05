@@ -4,6 +4,7 @@ import { CommandInteraction, EmbedField, GuildChannel, GuildTextBasedChannel, In
 import { connectToCollection, connectToDB, IClanQuestMessage } from '../utils/database';
 import { Collection, MongoClient } from "mongodb";
 import { setUncaughtExceptionCaptureCallback } from 'process';
+import { delayDelete } from '../utils/general';
 
 export const data: SlashCommandSubcommandsOnlyBuilder = new SlashCommandBuilder()
     .setName('clanquests')
@@ -65,17 +66,24 @@ export const execute = async (interaction: CommandInteraction) => {
                 const message = await interaction.channel.messages.fetch(clanQuestMessageInfo.clanQuestMessage)
                 const embed: MessageEmbed = message.embeds[0]
                 if (embed.fields.length === 0) {
-                    embed.addField(interaction.user.username, interaction.options.getString('input'))
+                    embed.addField(interaction.user.username, interaction.options.getString('input'),true)
                 }
                 else {
                     const updateField: EmbedField = embed.fields.find(x => x.name === interaction.user.username);
-                    updateField.value = interaction.options.getString('input')
+                    if (updateField) {
+                        updateField.value = interaction.options.getString('input')
+                    }
+                    else{
+                        embed.addField(interaction.user.username, interaction.options.getString('input'), true)
+                    }
                 }
                 await message.edit({ embeds: [embed] })
-                await interaction.followUp({ content: `${interaction.user} Your clan quest info has been updated!`, ephemeral: true })
+                const followUp = await interaction.followUp({ content: `${interaction.user} Your clan quest info has been updated!`, ephemeral: true }) as Message;
+                await delayDelete([followUp])
             }
             else {
-                await interaction.followUp(`${interaction.user} Please use '/clanquests start' to start a clan quests tracking message I can update first!`);
+                const followUp = await interaction.followUp(`${interaction.user} Please use '/clanquests start' to start a clan quests tracking message I can update first!`) as Message; 
+                await delayDelete([followUp]);
             }
         }
     }

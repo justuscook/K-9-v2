@@ -69,6 +69,6 @@ client.on('interactionCreate', async (interaction: Interaction) => {
     else {
         const commandSuccess: Promise<boolean> = await command.execute(interaction);
     }
-
+console.log('K-9 Online!')
 })
 
