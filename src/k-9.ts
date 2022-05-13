@@ -6,7 +6,7 @@ import { Routes } from 'discord-api-types/v9';
 import express, { Response, Request } from 'express';
 import cors from 'cors';
 import axois from 'axios'
-import { getAuthToken, getSpreadSheetValues, ILeaderBoardData, ISheetData, ISpreadSheetValues, leaderbaordSheetId, mapValuesFromValues } from './utils/sheets';
+import { getAuthToken, getSpreadSheetValues, ISheetData, ISpreadSheetValues, leaderbaordSheetId, mapValuesFromValues } from './utils/sheets';
 
 
 export interface ICommandInfo {
