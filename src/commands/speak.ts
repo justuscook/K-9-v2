@@ -2,6 +2,9 @@ import { SlashCommandBuilder, SlashCommandChannelOption, SlashCommandStringOptio
 import { ChannelType } from 'discord-api-types/v10';
 import { CommandInteraction, GuildChannel, GuildTextBasedChannel, Interaction } from 'discord.js'
 
+/**
+ * Slash command setup
+ */
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('speak')
     .addChannelOption(new SlashCommandChannelOption()
@@ -15,8 +18,18 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
         .setRequired(true))
     .setDescription('Send a message as K-9 to a choosen channel.')
     .setDefaultPermission(true)
+
+/**
+ * Command name, needed for help command
+ */
 export const name = 'speak';
+/**
+ * 
+ * @param interaction the interaction sent from the interaction handler
+ * @returns Can add a boolen return for successful or failed command
+ */
 export const execute = async (interaction: CommandInteraction) => {
+    //this line is standard, if the bot doesnt replay to the interaction in a certain amount of time the command will fail, this is fail safe the extends 
     await interaction.deferReply();
     const text = interaction.options.getString('text');
     const channel = interaction.options.getChannel('channel') as GuildTextBasedChannel;
@@ -24,8 +37,8 @@ export const execute = async (interaction: CommandInteraction) => {
         try {
             await channel.send(text)
         }
-        catch (e){
-            if(e.code === 50001){
+        catch (e) {
+            if (e.code === 50001) {
                 await interaction.followUp(`I can\'t send a message to **${channel.name}**, I don't have permisions there.`)
             }
             console.log(e)
@@ -33,7 +46,7 @@ export const execute = async (interaction: CommandInteraction) => {
         }
     }
     else {
-        await channel.send('You shouldn\'t get this error, it\' Discords fault not mine!')
+        await channel.send('You shouldn\'t get this error, it\'s Discords fault not mine!')
         return;
     }
     await interaction.followUp('Message sent master!')
