@@ -4,18 +4,19 @@ import { connectToCollection, connectToDB, IClanQuestMessage } from '../utils/da
 import { delayDelete } from '../utils/general';
 //Clan quest set up
 export const data: SlashCommandSubcommandsOnlyBuilder = new SlashCommandBuilder()
-    .setName('clanquests')
+    .setName('clannumbers')
     .setDescription('Use this command to setup clan quest tracking!')
     .setDefaultPermission(true)
     .addSubcommand(new SlashCommandSubcommandBuilder()
         .setName('start')
-        .setDescription('Create a new clan quest tracker message.'))
+        .setDescription('Create a new clan numbers tracker message.'))
     .addSubcommand(new SlashCommandSubcommandBuilder()
         .setName('add')
-        .setDescription('Add to the latest clan quest tracker message.')
+        .setDescription('Add to the latest clan numbers tracker message.')
+        
         .addStringOption(new SlashCommandStringOption()
             .setName('input')
-            .setDescription('Your clan quest info.')
+            .setDescription('Your clan numbers info.')
             .setRequired(true)
         ))
     .addSubcommand(new SlashCommandSubcommandBuilder()
@@ -24,7 +25,7 @@ export const data: SlashCommandSubcommandsOnlyBuilder = new SlashCommandBuilder(
     );
 
 //Name of command for help command
-export const name = 'clanquests';
+export const name = 'clannumbers';
 export const execute = async (interaction: CommandInteraction) => {
     await interaction.deferReply();
     //figure out what sub command was used
@@ -51,7 +52,7 @@ export const execute = async (interaction: CommandInteraction) => {
             const client = await connectToDB();
             const collection = await connectToCollection('clan-quests', client);
             //connect to the DB and update the clan quest messasge ID
-            collection.updateOne(
+            await collection.updateOne(
                 { channelId: interaction.channelId },
                 {
                     $set: {
@@ -73,27 +74,30 @@ export const execute = async (interaction: CommandInteraction) => {
                     await client.close();
                 });
             //make sure to disconnect form the server
-            await client.close();
+
             break;
         }
         case 'add': {
             //this will add or update the users info on the clan quest message
-            const client1 = await connectToDB();
-            const collection1 = await connectToCollection('clan-quests', client1);
+            const client = await connectToDB();
+            const collection = await connectToCollection('clan-quests', client);
             //get the clan quest message
-            const clanQuestMessageInfo: IClanQuestMessage = await collection1.findOne<IClanQuestMessage>({ channelId: interaction.channelId });
+            const clanQuestMessageInfo: IClanQuestMessage = await collection.findOne<IClanQuestMessage>({ channelId: interaction.channelId });
             if (clanQuestMessageInfo) {
                 const message = await interaction.channel.messages.fetch(clanQuestMessageInfo.clanQuestMessage)
                 //get the current embed on the message
                 const embed: MessageEmbed = message.embeds[0]
-                let name = (interaction.member as GuildMember).nickname;
-                if (!name) {
-                    name = interaction.member.user.username;
+                let name;
+                try {
+                    name = (interaction.member as GuildMember).nickname;
+                }
+                catch {
+                    name = interaction.member.user.username
                 }
                 //each user has a feild in the embed, if the embed has no fields, make that user the first one.
                 if (embed.fields.length === 0) {
                     embed.addField(name, interaction.options.getString('input'), true)
-                    await client1.close();
+                    await client.close();
                 }
                 //else look for the users nickname as the field title, if found update it
                 else {
@@ -105,7 +109,7 @@ export const execute = async (interaction: CommandInteraction) => {
                     else {
                         embed.addField(name, interaction.options.getString('input'), true)
                     }
-                    await client1.close();
+                    await client.close();
                 }
                 //send the updated embed back to the message
                 await message.edit({ embeds: [embed] })
@@ -113,30 +117,31 @@ export const execute = async (interaction: CommandInteraction) => {
                 const followUp = await interaction.followUp({ content: `${interaction.user} Your clan quest info has been updated!`, ephemeral: true }) as Message;
                 //delete the followup after the default 10 seconds
                 await delayDelete([followUp]);
-                await client1.close();
+                await client.close();
             }
             //if there is no clan quest message yet, ask the user to start one
             else {
                 const followUp = await interaction.followUp(`${interaction.user} Please use '/clanquests start' to start a clan quests tracking message I can update first!`) as Message;
                 await delayDelete([followUp]);
-                await client1.close();
+                await client.close();
             }
-            await client1.close();
+            await client.close();
             break;
         }
         //"move" the clan quest message to the most recent message in the channel
         case 'move': {
-            const client2 = await connectToDB();
-            const collection2 = await connectToCollection('clan-quests', client2);
+            const client = await connectToDB();
+            const collection = await connectToCollection('clan-quests', client);
             //get the clan quest message id
-            const clanQuestMessageInfo: IClanQuestMessage = await collection2.findOne<IClanQuestMessage>({ channelId: interaction.channelId });
+            const clanQuestMessageInfo: IClanQuestMessage = await collection.findOne<IClanQuestMessage>({ channelId: interaction.channelId });
             if (clanQuestMessageInfo) {
                 let newEmbed: MessageEmbed = new MessageEmbed();
                 newEmbed = (await interaction.channel.messages.fetch(clanQuestMessageInfo.clanQuestMessage)).embeds[0];
                 //make a copy of the message and resend it so its the latest
                 const newMessage = await interaction.followUp({ embeds: [newEmbed] })
                 //then up date the clan quest message id in DB
-                collection2.updateOne( { channelId: interaction.channelId },
+                await collection.updateOne(
+                    { channelId: interaction.channelId },
                     {
                         $set: {
                             clanQuestMessage: newMessage.id
@@ -146,20 +151,17 @@ export const execute = async (interaction: CommandInteraction) => {
                     async (err: any, result: any) => {
                         if (err) {
                             await interaction.channel.send(`Get Orcinus in here!  I dun goofed!`)
-                            client2.close();
-                        }
-                        else{
-                            client2.close();
+                            await client.close();
                         }
                     });
-
+                await client.close();
             }
             else {
                 //ask user to do start command if theres no clan quest yet
                 await interaction.followUp(`Please use **/clanquests start first**`)
-
+                await client.close();
             }
-
+            await client.close();
             break;
         }
     }
